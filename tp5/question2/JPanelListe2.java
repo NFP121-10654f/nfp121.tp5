@@ -3,6 +3,8 @@ package question2;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import java.util.Stack;
+import java.util.ArrayList;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -23,7 +25,7 @@ public class JPanelListe2 extends JPanel implements ActionListener, ItemListener
 
     private CheckboxGroup mode = new CheckboxGroup();
     private Checkbox ordreCroissant = new Checkbox("croissant", mode, false);
-    private Checkbox ordreDecroissant = new Checkbox("décroissant", mode, false);
+    private Checkbox ordreDecroissant = new Checkbox("d�croissant", mode, false);
 
     private JButton boutonOccurrences = new JButton("occurrence");
 
@@ -34,9 +36,13 @@ public class JPanelListe2 extends JPanel implements ActionListener, ItemListener
     private List<String> liste;
     private Map<String, Integer> occurrences;
 
+    private Stack<List<String>> stackSave;
+
     public JPanelListe2(List<String> liste, Map<String, Integer> occurrences) {
         this.liste = liste;
         this.occurrences = occurrences;
+
+        stackSave = new Stack();
 
         cmd.setLayout(new GridLayout(3, 1));
 
@@ -53,11 +59,10 @@ public class JPanelListe2 extends JPanel implements ActionListener, ItemListener
         panelBoutons.add(boutonAnnuler);
         cmd.add(panelBoutons);
 
-
-        if(liste!=null && occurrences!=null){
-            afficheur.setText(liste.getClass().getName() + " et "+ occurrences.getClass().getName());
+        if (liste != null && occurrences != null) {
+            afficheur.setText(liste.getClass().getName() + " et " + occurrences.getClass().getName());
             texte.setText(liste.toString());
-        }else{
+        } else {
             texte.setText("la classe Chapitre2CoreJava semble incomplète");
         }
 
@@ -67,30 +72,55 @@ public class JPanelListe2 extends JPanel implements ActionListener, ItemListener
         add(texte, "Center");
 
         boutonRechercher.addActionListener(this);
-        // à compléter;
+
+        boutonRetirer.addActionListener(this);
+        boutonOccurrences.addActionListener(this);
+        ordreCroissant.addItemListener(this);
+        ordreDecroissant.addItemListener(this);
+
+        saisie.addActionListener(this);
+        boutonAnnuler.addActionListener(this);
 
     }
 
     public void actionPerformed(ActionEvent ae) {
         try {
+
             boolean res = false;
             if (ae.getSource() == boutonRechercher || ae.getSource() == saisie) {
+
                 res = liste.contains(saisie.getText());
                 Integer occur = occurrences.get(saisie.getText());
-                afficheur.setText("résultat de la recherche de : "
-                    + saisie.getText() + " -->  " + res);
+                afficheur.setText("r�sultat de la recherche de : "
+                        + saisie.getText() + " -->  " + res);
+
             } else if (ae.getSource() == boutonRetirer) {
-                res = retirerDeLaListeTousLesElementsCommencantPar(saisie
-                    .getText());
-                afficheur
-                .setText("résultat du retrait de tous les éléments commençant par -->  "
-                    + saisie.getText() + " : " + res);
+                List<String> listeBis = new ArrayList<String>(this.liste);
+                res = retirerDeLaListeTousLesElementsCommencantPar(saisie.getText());
+                if (res) {
+                    save(listeBis);
+                }
+                afficheur.setText("r�sultat du retrait de tous les �l�ments commen�ant par -->  "
+                        + saisie.getText() + " : " + res);
+
             } else if (ae.getSource() == boutonOccurrences) {
+
                 Integer occur = occurrences.get(saisie.getText());
-                if (occur != null)
+                if (occur != null) {
                     afficheur.setText(" -->  " + occur + " occurrence(s)");
-                else
+                } else {
                     afficheur.setText(" -->  ??? ");
+                }
+            } else if (ae.getSource() == boutonAnnuler) {
+                try {
+                    if (!stackSave.isEmpty()) {
+                        this.liste = stackSave.pop();
+                        occurrences = Chapitre2CoreJava2.occurrencesDesMots(this.liste); 
+
+                    } else {
+                    }
+                } catch (Exception e) {
+                }
             }
             texte.setText(liste.toString());
 
@@ -100,20 +130,41 @@ public class JPanelListe2 extends JPanel implements ActionListener, ItemListener
     }
 
     public void itemStateChanged(ItemEvent ie) {
-        if (ie.getSource() == ordreCroissant)
-        ;// à compléter
-        else if (ie.getSource() == ordreDecroissant)
-        ;// à compléter
-
+        List<String> listeBis = new ArrayList<String>(this.liste);
+        boolean res = false;
+        if (ie.getSource() == ordreCroissant) {
+            res = true;
+            if (res) {
+                save(listeBis);
+            }
+            Collections.sort(this.liste);
+        } else if (ie.getSource() == ordreDecroissant) {
+            res = true;
+            if (res) {
+                save(listeBis);
+            }
+            Collections.sort(this.liste, Collections.reverseOrder());
+        }
         texte.setText(liste.toString());
     }
 
     private boolean retirerDeLaListeTousLesElementsCommencantPar(String prefixe) {
         boolean resultat = false;
-        // à compléter
-        // à compléter
-        // à compléter
+        List<String> temp = this.liste;
+        Iterator<String> iter = temp.iterator();
+        while (iter.hasNext()) {
+            String s = iter.next();
+
+            if (s.startsWith(prefixe)) {
+                iter.remove();
+                resultat = true;
+                this.occurrences.put(s, 0);
+            }
+        }
         return resultat;
     }
 
+    private void save(List<String> listSave) {
+        stackSave.push(listSave);
+    }
 }
